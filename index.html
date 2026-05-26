@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner de Portas</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="config-btn" id="configBtn">
+      ⚙
+    </div>
+
+    <h1>Scanner de Portas</h1>
+
+    <input 
+      type="text"
+      id="ipInput"
+      placeholder="Digite um IP"
+    >
+
+    <button id="scanBtn">
+      Consultar
+    </button>
+
+    <div id="resultadoScan"></div>
+
+  </div>
+
+  <!-- MODAL -->
+
+  <div class="modal" id="modalConfig">
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+        <h2>Configurações</h2>
+
+        <button class="close-btn" id="closeConfigBtn">
+          Sair
+        </button>
+
+      </div>
+
+      <input 
+        type="number"
+        id="portaInput"
+        placeholder="Digite uma porta"
+      >
+
+      <button id="addPortaBtn">
+        Adicionar Porta
+      </button>
+
+      <div 
+        class="port-list"
+        id="listaPortas"
+      ></div>
+
+    </div>
+
+  </div>
+
+  <script src="index.js" defer></script>
+
+</body>
+</html>
