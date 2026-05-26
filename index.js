@@ -1,18 +1,18 @@
 let ports = [80, 443, 1023, 1024, 1025, 1026, 7575, 8080, 8095, 9085];
 
-document.getElementById("closeConfigBtn")
-  .addEventListener("click", fecharConfig);
-
-document.getElementById("addPortaBtn")
-  .addEventListener("click", adicionarPorta);
-
-document.getElementById("scanBtn")
-  .addEventListener("click", consultarIP);
-
-document.getElementById("configBtn")
-  .addEventListener("click", abrirConfig);
-
 window.addEventListener("DOMContentLoaded", () => {
+
+  document.getElementById("closeConfigBtn")
+    .addEventListener("click", fecharConfig);
+
+  document.getElementById("addPortaBtn")
+    .addEventListener("click", adicionarPorta);
+
+  document.getElementById("scanBtn")
+    .addEventListener("click", consultarIP);
+
+  document.getElementById("configBtn")
+    .addEventListener("click", abrirConfig);
 
   const input = document.getElementById("ipInput");
 
@@ -87,15 +87,13 @@ async function consultarIP(){
   `;
 
   const btn = document.createElement("button");
-
   btn.className = aberta
     ? "open-btn"
     : "closed-btn";
 
   btn.textContent = "Acessar";
-
   btn.addEventListener("click", () => {
-    abrirPorta(ip, porta, protocolo);
+  abrirPorta(ip, porta);
   });
 
   wrapper.appendChild(status);
@@ -110,7 +108,7 @@ async function consultarIP(){
   document.getElementById("scanBtn").disabled = false;
 }
 
-function abrirPorta(ip, porta, protocolo){
+function abrirPorta(ip, porta){
 
   const protocolo =
     porta === 443 || porta === 8443
