@@ -3,7 +3,14 @@
   "name": "Scanner de Portas",
   "version": "1.0",
 
-  "permissions": ["tabs", "activeTab"],
+  "permissions": [
+    "tabs",
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
 
   "background": {
     "service_worker": "background.js"

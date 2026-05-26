@@ -31,80 +31,137 @@ async function consultarIP(){
   const ip = document.getElementById("ipInput").value;
 
   if(ip.trim() === ""){
-    alert("Digite um IP!");
-    return;
+  alert("Digite um IP!");
+  return;
+  }
+
+  const regexIP =
+  /^(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)$/;
+
+  if(!regexIP.test(ip)){
+  alert("IP inválido!");
+  return;
   }
 
   resultado.innerHTML = "⏳ Escaneando portas...";
+  
+  document.getElementById("scanBtn").disabled = true;
+  
+  const resultados = await Promise.all(
 
-  try{
+    ports.map(async (porta) => {
 
-    const response = await fetch("http://127.0.0.1:5000/scan", {
+      const resultado = await testarPorta(ip, porta);
 
-      method: "POST",
+      return {
+        porta,
+        aberta: resultado.aberta,
+        protocolo: resultado.protocolo
+      };
+    })
+  );
 
-      headers:{
-        "Content-Type":"application/json"
-      },
+  resultado.innerHTML = "";
+  resultados.forEach(({ porta, aberta, protocolo }) => {
 
-      body: JSON.stringify({
-        ip: ip,
-        ports: ports
-      })
+  const div = document.createElement("div");
+  div.className = "port-item";
 
-    });
+  const span = document.createElement("span");
+  span.textContent = `Porta ${porta}`;
 
-    const data = await response.json();
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.gap = "10px";
+  wrapper.style.alignItems = "center";
 
-    resultado.innerHTML = "";
+  const status = document.createElement("div");
 
-    data.forEach(item => {
+  status.className = aberta
+    ? "status-open"
+    : "status-closed";
 
-      const div = document.createElement("div");
-      div.className = "port-item";
+  status.innerHTML = `
+    <span class="status-dot"></span>
+    ${aberta ? "ABERTA" : "FECHADA"}
+  `;
 
-      const span = document.createElement("span");
-      span.textContent = `Porta ${item.porta}`;
+  const btn = document.createElement("button");
 
-      const wrapper = document.createElement("div");
-      wrapper.style.display = "flex";
-      wrapper.style.gap = "10px";
-      wrapper.style.alignItems = "center";
+  btn.className = aberta
+    ? "open-btn"
+    : "closed-btn";
 
-      const status = document.createElement("div");
-      status.className = item.status === 'ABERTA' ? 'status-open' : 'status-closed';
-      status.innerHTML = `<span class="status-dot"></span> ${item.status}`;
+  btn.textContent = "Acessar";
 
-      const btn = document.createElement("button");
-      btn.className = item.status === 'ABERTA' ? 'open-btn' : 'closed-btn';
-      btn.textContent = "Acessar";
+  btn.addEventListener("click", () => {
+    abrirPorta(ip, porta, protocolo);
+  });
 
-      btn.addEventListener("click", () => {
-        abrirPorta(ip, item.porta);
-      });
+  wrapper.appendChild(status);
+  wrapper.appendChild(btn);
 
-      wrapper.appendChild(status);
-      wrapper.appendChild(btn);
+  div.appendChild(span);
+  div.appendChild(wrapper);
 
-      div.appendChild(span);
-      div.appendChild(wrapper);
+  resultado.appendChild(div);
+  });
 
-      resultado.appendChild(div);
-    });
-
-  }catch(err){
-
-    resultado.innerHTML = "❌ Erro ao conectar com Python";
-    console.error(err);
-  }
+  document.getElementById("scanBtn").disabled = false;
 }
 
-function abrirPorta(ip, porta){
-  const url = `http://${ip}:${porta}`;
+function abrirPorta(ip, porta, protocolo){
+
+  const protocolo =
+    porta === 443 || porta === 8443
+      ? "https"
+      : "http";
+
+  const url = `${protocolo}://${ip}:${porta}`;
 
   chrome.runtime.sendMessage({
     type: "OPEN_TAB",
     url: url
+  });
+}
+
+function testarPorta(ip, porta){
+
+  return new Promise(async (resolve) => {
+
+    const protocolos = ["http", "https"];
+
+    for(const protocolo of protocolos){
+
+      try{
+
+        await Promise.race([
+
+          fetch(`${protocolo}://${ip}:${porta}`, {
+            mode: "no-cors"
+          }),
+
+          new Promise((_, reject) =>
+            setTimeout(() => reject(), 1500)
+          )
+
+        ]);
+
+        resolve({
+          aberta: true,
+          protocolo
+        });
+
+        return;
+
+      }catch(err){}
+    }
+
+    resolve({
+      aberta: false,
+      protocolo: "http"
+    });
+
   });
 }
 
