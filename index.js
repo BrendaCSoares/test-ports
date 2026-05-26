@@ -1,5 +1,7 @@
 let ports = [80, 443, 1023, 1024, 1025, 1026, 7575, 8080, 8095, 9085];
 
+const HTTPS_PORTS = new Set([443, 8443]);
+
 window.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("closeConfigBtn")
@@ -110,10 +112,9 @@ async function consultarIP(){
 
 function abrirPorta(ip, porta){
 
-  const protocolo =
-    porta === 443 || porta === 8443
-      ? "https"
-      : "http";
+  const protocolo = HTTPS_PORTS.has(porta)
+    ? "https"
+    : "http";
 
   const url = `${protocolo}://${ip}:${porta}`;
 
@@ -123,44 +124,88 @@ function abrirPorta(ip, porta){
   });
 }
 
-function testarPorta(ip, porta){
+async function testarPorta(ip, porta) {
 
-  return new Promise(async (resolve) => {
+  const protocolos = HTTPS_PORTS.has(porta)
+    ? ["wss", "ws"]
+    : ["ws", "wss"];
 
-    const protocolos = ["http", "https"];
+  for (const protocolo of protocolos) {
 
-    for(const protocolo of protocolos){
+    try {
 
-      try{
+      const resultado = await new Promise((resolve) => {
 
-        await Promise.race([
+        const ws = new WebSocket(`${protocolo}://${ip}:${porta}`);
 
-          fetch(`${protocolo}://${ip}:${porta}`, {
-            mode: "no-cors"
-          }),
+        let finalizado = false;
 
-          new Promise((_, reject) =>
-            setTimeout(() => reject(), 1500)
-          )
+        const timeout = setTimeout(() => {
 
-        ]);
+          if (!finalizado) {
 
-        resolve({
+            finalizado = true;
+
+            ws.close();
+
+            resolve(false);
+
+          }
+
+        }, 3000);
+
+        ws.onopen = () => {
+
+          if (finalizado) return;
+
+          finalizado = true;
+
+          clearTimeout(timeout);
+
+          ws.close();
+
+          resolve(true);
+
+        };
+
+        ws.onerror = () => {
+
+          if (finalizado) return;
+
+          finalizado = true;
+
+          clearTimeout(timeout);
+
+          resolve(false);
+
+        };
+
+      });
+
+      if (resultado) {
+
+        return {
           aberta: true,
-          protocolo
-        });
+          protocolo: protocolo === "wss"
+            ? "https"
+            : "http"
+        };
 
-        return;
+      }
 
-      }catch(err){}
+    } catch (err) {
+
+      // tenta próximo protocolo
+
     }
 
-    resolve({
-      aberta: false,
-      protocolo: "http"
-    });
+  }
 
-  });
+  return {
+    aberta: false,
+    protocolo: null
+  };
+
 }
 
 function abrirConfig(){
